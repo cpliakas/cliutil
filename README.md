@@ -35,12 +35,12 @@ func init() {
 	rootCmd.AddCommand(myCmd)
     
 	// Configure the AutomaticEnv capability to read configuration from
-    // environment variables prefixed with "MYAPP_".
-    // See https://github.com/spf13/viper#working-with-environment-variables
+	// environment variables prefixed with "MYAPP_".
+	// See https://github.com/spf13/viper#working-with-environment-variables
 	myCfg = cliutil.InitConfig("MYAPP")
 
-    // Add flags to myCmd. Use the myCfg.Get* methods to get the options passed
-    // via command line. See https://github.com/spf13/viper for usage docs.
+	// Add flags to myCmd. Use the myCfg.Get* methods to get the options passed
+	// via command line. See https://github.com/spf13/viper for usage docs.
 	flags := cliutil.NewFlagger(myCmd, myCfg)
 	flags.String("log-level", "l", "info", "the minimum log level")
 	flags.Int("max-num", "n", 100, "the maximum number of something")
@@ -56,7 +56,7 @@ Parses a strings like `key1=value1 key2="some other value"` into a
 
 func parseValues() {
 	s := `key1=value1 key2="some other value"`
-    m := cliutil.ParseKeyValue(s)
+	m := cliutil.ParseKeyValue(s)
 	fmt.Println(m["key1"])  // value1
 	fmt.Println(m["key1"])  // some other value
 }
