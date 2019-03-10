@@ -14,8 +14,8 @@ func HandleError(cmd *cobra.Command, err error) {
 		return
 	}
 
-	fmt.Fprintln(os.Stderr, err)
-	cmd.Help()
+	fmt.Fprintf(os.Stderr, "%v\n\n", err)
+	cmd.Usage()
 
 	os.Exit(1)
 }
