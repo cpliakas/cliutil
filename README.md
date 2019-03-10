@@ -58,7 +58,7 @@ func parseValues() {
 	s := `key1=value1 key2="some other value"`
 	m := cliutil.ParseKeyValue(s)
 	fmt.Println(m["key1"])  // value1
-	fmt.Println(m["key1"])  // some other value
+	fmt.Println(m["key2"])  // some other value
 }
 
 ```
