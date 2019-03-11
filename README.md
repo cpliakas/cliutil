@@ -70,8 +70,8 @@ Listens for shutdown events, useful for long-running processes.
 ```go
 func main() {
 
-	// Start the event listener. A message is sent to the cancel channel when a
-	// shutdown signal is received.
+	// Start the event listener. A message is sent to the shutdown channel when
+	// a SIGINT or SIGTERM signal is received.
 	sig := make(chan os.Signal)
 	shutdown := cliutil.EventListener(sig)
 
