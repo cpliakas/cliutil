@@ -62,3 +62,28 @@ func parseValues() {
 }
 
 ```
+
+### EventListener
+
+Listens for shutdown events, useful for long-running processes.
+
+```go
+func main() {
+
+	// Start the event listener. A message is sent to the cancel channel when a
+	// shutdown signal is received.
+	sig := make(chan os.Signal)
+	shutdown := cliutil.EventListener(sig)
+
+	// Do something long-running in a goroutine.
+	go doStuff()
+
+	// Wait for the shutdown signal.
+	<-shutdown
+	log.Println("shutdown signal received, exiting")
+}
+
+func doStuff() {
+	// do stuff here
+}
+```

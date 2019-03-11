@@ -8,16 +8,14 @@ import (
 
 // EventListener listens for SIGINT and SIGTERM signals and notifies the
 // shutdown channel if it detects that either was sent.
-func EventListener() <-chan bool {
+func EventListener(sig chan os.Signal) <-chan bool {
 	shutdown := make(chan bool)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		ch := make(chan os.Signal)
-		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-
 		for {
 			select {
-			case <-ch:
+			case <-sig:
 				shutdown <- true
 				break
 			}
