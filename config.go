@@ -64,3 +64,15 @@ func (f *Flagger) PersistentString(name, shorthand, value, usage string) {
 	f.cmd.PersistentFlags().StringP(name, shorthand, value, usage)
 	f.cfg.BindPFlag(name, f.cmd.PersistentFlags().Lookup(name))
 }
+
+// Float64 adds a local flag that accepts a 64-bit float.
+func (f *Flagger) Float64(name, shorthand string, value float64, usage string) {
+	f.cmd.Flags().Float64P(name, shorthand, value, usage)
+	f.cfg.BindPFlag(name, f.cmd.Flags().Lookup(name))
+}
+
+// PersistentFloat64 adds a persistent flag that accepts a 64-bit float.
+func (f *Flagger) PersistentFloat64(name, shorthand string, value float64, usage string) {
+	f.cmd.PersistentFlags().Float64P(name, shorthand, value, usage)
+	f.cfg.BindPFlag(name, f.cmd.PersistentFlags().Lookup(name))
+}
