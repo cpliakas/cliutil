@@ -57,8 +57,8 @@ Parses strings like `key1=value1 key2="some other value"` into a
 func parseValues() {
 	s := `key1=value1 key2="some other value"`
 	m := cliutil.ParseKeyValue(s)
-	fmt.Println(m["key1"])  // value1
-	fmt.Println(m["key2"])  // some other value
+	fmt.Println(m["key1"])  // prints "value1"
+	fmt.Println(m["key2"])  // prints "some other value"
 }
 
 ```
@@ -72,14 +72,13 @@ func main() {
 
 	// Start the event listener. A message is sent to the shutdown channel when
 	// a SIGINT or SIGTERM signal is received.
-	sig := make(chan os.Signal)
-	shutdown := cliutil.EventListener(sig)
+	listener := cliutil.NewEventListener().Run()
 
 	// Do something long-running in a goroutine.
 	go doStuff()
 
 	// Wait for the shutdown signal.
-	<-shutdown
+	listener.Wait()
 	log.Println("shutdown signal received, exiting")
 }
 
