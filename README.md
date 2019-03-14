@@ -49,7 +49,7 @@ func init() {
 
 ### Key/Value Parser
 
-Parses a strings like `key1=value1 key2="some other value"` into a
+Parses strings like `key1=value1 key2="some other value"` into a
 `map[string]string`.
 
 ```go
