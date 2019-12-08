@@ -21,7 +21,7 @@ func HandleError(cmd *cobra.Command, err error, prefixes ...string) {
 
 // WriteError formats and writes an error message to io.Writer w. All prefixes
 // are prepended to the error message and separated by a colon plus space (: ).
-// Two new lone characters are printed after the error message, as it is
+// Two new line characters are printed after the error message, as it is
 // assumed that command usage follows the error message.
 func WriteError(w io.Writer, err error, prefixes ...string) {
 	var format string
