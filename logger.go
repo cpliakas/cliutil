@@ -8,6 +8,8 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	"github.com/rs/xid"
 )
 
 // See https://stackoverflow.com/a/40891417
@@ -27,6 +29,11 @@ const (
 	LogNotice = "notice"
 	LogInfo   = "info"
 	LogDebug  = "debug"
+)
+
+// LogTag* constants contain common log tags.
+const (
+	LogTagTransactionID = "transid"
 )
 
 // logLevels is a map of log level names to Log* constant.
@@ -119,6 +126,14 @@ func (l LeveledLogger) Info(ctx context.Context, message string) {
 // Debug writes a debug level log.
 func (l LeveledLogger) Debug(ctx context.Context, message string) {
 	printLog(ctx, l.DebugLogger, "DEBUG", message, nil)
+}
+
+// NewContext returns an initialized context with common values.
+func NewContext() (ctx context.Context, transid xid.ID) {
+	transid = xid.New()
+	ctx = context.Background()
+	ctx = ContextWithLogTag(ctx, LogTagTransactionID, transid.String())
+	return
 }
 
 // ContextWithLogTag returns a new context with log tags appended.
