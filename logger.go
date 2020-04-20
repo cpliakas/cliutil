@@ -33,7 +33,9 @@ const (
 
 // LogTag* constants contain common log tags.
 const (
+	LogTagFile          = "file"
 	LogTagTransactionID = "transid"
+	LogTagURL           = "url"
 )
 
 // logLevels is a map of log level names to Log* constant.
@@ -68,6 +70,16 @@ func LogLevel(level string) (id int) {
 	return
 }
 
+// NewLoggerWithContext returns a leveled logger with a context that is
+// initialized with a unique transaction ID.
+func NewLoggerWithContext(tx context.Context, level string) (ctx context.Context, logger *LeveledLogger, transid xid.ID) {
+	transid = xid.New()
+	ctx = context.WithValue(ctx, CtxLogTags, "")
+	ctx = ContextWithLogTag(ctx, LogTagTransactionID, transid.String())
+	logger = NewLogger(level)
+	return
+}
+
 // NewLogger returns a LeveledLogger that writes logs to either os.Stdout or
 // ioutil.Discard depending on the passed minimum log level.
 func NewLogger(level string) *LeveledLogger {
@@ -94,6 +106,12 @@ func NewLogger(level string) *LeveledLogger {
 	}
 }
 
+// Fatal writes an fatal level log and exits with a non-zero exit code.
+func (l LeveledLogger) Fatal(ctx context.Context, message string, err error) {
+	printLog(ctx, l.FatalLogger, "FATAL", message, err)
+	os.Exit(1)
+}
+
 // FatalIfError writes a fatal level log and exits with a non-zero exit code if
 // err != nil. This function is a no-op if err == nil.
 func (l LeveledLogger) FatalIfError(ctx context.Context, message string, err error) {
@@ -102,15 +120,16 @@ func (l LeveledLogger) FatalIfError(ctx context.Context, message string, err err
 	}
 }
 
-// Fatal writes an fatal level log and exits with a non-zero exit code.
-func (l LeveledLogger) Fatal(ctx context.Context, message string, err error) {
-	printLog(ctx, l.FatalLogger, "FATAL", message, err)
-	os.Exit(1)
-}
-
 // Error writes an error level log.
 func (l LeveledLogger) Error(ctx context.Context, message string, err error) {
 	printLog(ctx, l.ErrorLogger, "ERROR", message, err)
+}
+
+// ErrorIfError writes an error level log if err is not nil.
+func (l LeveledLogger) ErrorIfError(ctx context.Context, message string, err error) {
+	if err != nil {
+		l.Error(ctx, message, err)
+	}
 }
 
 // Notice writes an notice level log.
@@ -126,14 +145,6 @@ func (l LeveledLogger) Info(ctx context.Context, message string) {
 // Debug writes a debug level log.
 func (l LeveledLogger) Debug(ctx context.Context, message string) {
 	printLog(ctx, l.DebugLogger, "DEBUG", message, nil)
-}
-
-// NewContext returns an initialized context with common values.
-func NewContext() (ctx context.Context, transid xid.ID) {
-	transid = xid.New()
-	ctx = context.Background()
-	ctx = ContextWithLogTag(ctx, LogTagTransactionID, transid.String())
-	return
 }
 
 // ContextWithLogTag returns a new context with log tags appended.

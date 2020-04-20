@@ -63,7 +63,7 @@ func parseValues() {
 
 ```
 
-### EventListener
+### Event Listener
 
 Listens for shutdown events, useful for long-running processes.
 
@@ -84,5 +84,29 @@ func main() {
 
 func doStuff() {
 	// do stuff here
+}
+```
+
+### Leveled Logger with Context
+
+A simple, leveled logger with log tags derived from context.
+
+```go
+func main() {
+	ctx, logger, _ := cliutil.NewLoggerWithContext(context.Background(), cliutil.LogInfo)
+	logger.Debug("transaction id created, see transid log tag")
+
+	err := doStuff()
+	logger.FatalIfErrorctx, "error doing stuff", err)
+
+	ctx = cliutil.ContextWithLogTag(ctx, "stuff", "done doing it")
+	logger.Notice(ctx, "shutdown")
+}
+
+func doStuff() error {
+
+	// do stuff here, returns any errors
+
+	return nil
 }
 ```
