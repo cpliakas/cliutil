@@ -72,12 +72,10 @@ func LogLevel(level string) (id int) {
 
 // NewLoggerWithContext returns a leveled logger with a context that is
 // initialized with a unique transaction ID.
-func NewLoggerWithContext(tx context.Context, level string) (ctx context.Context, logger *LeveledLogger, transid xid.ID) {
-	transid = xid.New()
-	ctx = context.WithValue(ctx, CtxLogTags, "")
+func NewLoggerWithContext(ctx context.Context, level string) (context.Context, *LeveledLogger, xid.ID) {
+	transid := xid.New()
 	ctx = ContextWithLogTag(ctx, LogTagTransactionID, transid.String())
-	logger = NewLogger(level)
-	return
+	return ctx, NewLogger(level), transid
 }
 
 // NewLogger returns a LeveledLogger that writes logs to either os.Stdout or
