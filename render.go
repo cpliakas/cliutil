@@ -17,5 +17,5 @@ func FormatJSON(v interface{}) string {
 
 // PrintJSON writes pretty-printed JSON to STDOUT.
 func PrintJSON(v interface{}) {
-	fmt.Print(FormatJSON(v))
+	fmt.Println(FormatJSON(v))
 }

@@ -31,12 +31,8 @@ const (
 	LogDebug  = "debug"
 )
 
-// LogTag* constants contain common log tags.
-const (
-	LogTagFile          = "file"
-	LogTagTransactionID = "transid"
-	LogTagURL           = "url"
-)
+// LogTagTransactionID is the log tag that contains the transaction ID.
+const LogTagTransactionID = "transid"
 
 // logLevels is a map of log level names to Log* constant.
 var logLevels map[string]int
