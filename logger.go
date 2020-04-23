@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -39,11 +38,8 @@ var logLevels map[string]int
 
 // LeveledLogger is a simple leveled logger that writes logs to STDOUT.
 type LeveledLogger struct {
-	FatalLogger  *log.Logger
-	ErrorLogger  *log.Logger
-	NoticeLogger *log.Logger
-	InfoLogger   *log.Logger
-	DebugLogger  *log.Logger
+	level   int
+	loggers []*log.Logger
 }
 
 // LogLevel* represents log levels as integers for comparrison.
@@ -66,6 +62,12 @@ func LogLevel(level string) (id int) {
 	return
 }
 
+// LogLevelValid return true if the log level is valid.
+func LogLevelValid(level string) (ok bool) {
+	_, ok = logLevels[strings.ToLower(level)]
+	return
+}
+
 // NewLoggerWithContext returns a leveled logger with a context that is
 // initialized with a unique transaction ID.
 func NewLoggerWithContext(ctx context.Context, level string) (context.Context, *LeveledLogger, xid.ID) {
@@ -77,32 +79,32 @@ func NewLoggerWithContext(ctx context.Context, level string) (context.Context, *
 // NewLogger returns a LeveledLogger that writes logs to either os.Stdout or
 // ioutil.Discard depending on the passed minimum log level.
 func NewLogger(level string) *LeveledLogger {
-
-	// Use os.Stdout for all numbers >= the log level's ID, ioutil.Discard for
-	// everything < the log level's ID.
-	id := LogLevel(level)
-	w := make([]io.Writer, 6)
-	for i := range w {
-		if i <= id {
-			w[i] = os.Stdout
-		} else {
-			w[i] = ioutil.Discard
-		}
-	}
+	logger := &LeveledLogger{level: LogLevel(level)}
 
 	flags := log.Ldate | log.Ltime | log.Lmicroseconds | log.LUTC
-	return &LeveledLogger{
-		FatalLogger:  log.New(w[LogLevelFatal], "", flags),
-		ErrorLogger:  log.New(w[LogLevelError], "", flags),
-		NoticeLogger: log.New(w[LogLevelNotice], "", flags),
-		InfoLogger:   log.New(w[LogLevelInfo], "", flags),
-		DebugLogger:  log.New(w[LogLevelDebug], "", flags),
+	logger.loggers = make([]*log.Logger, 5)
+	for i := range logger.loggers {
+		logger.loggers[i] = log.New(os.Stdout, "", flags)
+	}
+
+	return logger
+}
+
+// SetLevel sets the minimum log level.
+func (l *LeveledLogger) SetLevel(level string) {
+	l.level = LogLevel(level)
+}
+
+// SetOutput sets the output for all loggers.
+func (l *LeveledLogger) SetOutput(w io.Writer) {
+	for _, logger := range l.loggers {
+		logger.SetOutput(w)
 	}
 }
 
 // Fatal writes an fatal level log and exits with a non-zero exit code.
 func (l LeveledLogger) Fatal(ctx context.Context, message string, err error) {
-	printLog(ctx, l.FatalLogger, "FATAL", message, err)
+	printLog(ctx, l.level < LogLevelFatal, l.loggers[0], "FATAL", message, err)
 	os.Exit(1)
 }
 
@@ -116,7 +118,7 @@ func (l LeveledLogger) FatalIfError(ctx context.Context, message string, err err
 
 // Error writes an error level log.
 func (l LeveledLogger) Error(ctx context.Context, message string, err error) {
-	printLog(ctx, l.ErrorLogger, "ERROR", message, err)
+	printLog(ctx, l.level < LogLevelError, l.loggers[1], "ERROR", message, err)
 }
 
 // ErrorIfError writes an error level log if err is not nil.
@@ -128,17 +130,17 @@ func (l LeveledLogger) ErrorIfError(ctx context.Context, message string, err err
 
 // Notice writes an notice level log.
 func (l LeveledLogger) Notice(ctx context.Context, message string) {
-	printLog(ctx, l.NoticeLogger, "NOTICE", message, nil)
+	printLog(ctx, l.level < LogLevelNotice, l.loggers[2], "NOTICE", message, nil)
 }
 
 // Info writes an info level log.
 func (l LeveledLogger) Info(ctx context.Context, message string) {
-	printLog(ctx, l.InfoLogger, "INFO", message, nil)
+	printLog(ctx, l.level < LogLevelInfo, l.loggers[3], "INFO", message, nil)
 }
 
 // Debug writes a debug level log.
 func (l LeveledLogger) Debug(ctx context.Context, message string) {
-	printLog(ctx, l.DebugLogger, "DEBUG", message, nil)
+	printLog(ctx, l.level < LogLevelDebug, l.loggers[4], "DEBUG", message, nil)
 }
 
 // ContextWithLogTag returns a new context with log tags appended.
@@ -165,9 +167,15 @@ func ContextWithLogTag(ctx context.Context, key string, val string) context.Cont
 	return context.WithValue(ctx, CtxLogTags, tag)
 }
 
-func printLog(ctx context.Context, logger *log.Logger, level string, message string, err error) {
+func printLog(ctx context.Context, skip bool, logger *log.Logger, level string, message string, err error) {
+	if skip {
+		return
+	}
+
+	// Initialize the log message Printf() format.
 	format := "%s message=%q"
 
+	// Initialize the log message Printf() arguments.
 	args := make([]interface{}, 2)
 	args[0] = level
 	args[1] = message
@@ -185,6 +193,7 @@ func printLog(ctx context.Context, logger *log.Logger, level string, message str
 		args = append(args, tags)
 	}
 
+	// Print the log message.
 	logger.Printf(format, args...)
 }
 
