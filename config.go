@@ -9,12 +9,20 @@ import (
 
 // InitConfig returns a *viper.Viper with an environment variable prefix set
 // so that options can be passed from environment variables.
-func InitConfig(prefix string) (c *viper.Viper) {
+func InitConfig(envPrefix string) (c *viper.Viper) {
 	c = viper.New()
-	c.SetEnvPrefix(prefix)
+	c.SetEnvPrefix(envPrefix)
 	c.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	c.AutomaticEnv()
 	return
+}
+
+// AddCommand adds a comand to it's parent, initializes the configuration,
+// and returns a flagger to easily add options.
+func AddCommand(parentCmd, cmd *cobra.Command, cfg *viper.Viper, envPrefix string) (*viper.Viper, *Flagger) {
+	parentCmd.AddCommand(cmd)
+	cfg = InitConfig(envPrefix)
+	return cfg, NewFlagger(cmd, cfg)
 }
 
 // Flagger is a utility that streamlines adding flags to commands.
