@@ -93,14 +93,17 @@ A simple, leveled logger with log tags derived from context.
 
 ```go
 func main() {
-	ctx, logger, _ := cliutil.NewLoggerWithContext(context.Background(), cliutil.LogInfo)
-	logger.Debug("transaction id created, see transid log tag")
+	ctx, logger, _ := cliutil.NewLoggerWithContext(context.Background(), cliutil.LogDebug)
+	logger.Debug(ctx, "transaction id created")
+	// 2020/04/29 14:24:50.516125 DEBUG message="transaction id created" transid=bqkoscmg10l5tdt068i0
 
 	err := doStuff()
 	logger.FatalIfError(ctx, "error doing stuff", err)
+	// no-op, will only log the message if err != nil.
 
 	ctx = cliutil.ContextWithLogTag(ctx, "stuff", "done doing it")
 	logger.Notice(ctx, "shutdown")
+	// 2020/04/29 14:24:50.516140 NOTICE message="shutdown" transid=bqkoscmg10l5tdt068i0 stuff="done doing it"
 }
 
 func doStuff() error {
