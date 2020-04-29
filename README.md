@@ -97,7 +97,7 @@ func main() {
 	logger.Debug("transaction id created, see transid log tag")
 
 	err := doStuff()
-	logger.FatalIfErrorctx, "error doing stuff", err)
+	logger.FatalIfError(ctx, "error doing stuff", err)
 
 	ctx = cliutil.ContextWithLogTag(ctx, "stuff", "done doing it")
 	logger.Notice(ctx, "shutdown")
