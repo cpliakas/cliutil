@@ -22,6 +22,8 @@ import "github.com/cpliakas/cliutil"
 
 ### Flagger
 
+Convenience functions that make it easier to add options to commands.
+
 ```go
 
 var myCfg *viper.Viper
@@ -63,7 +65,7 @@ func init() {
 
 ### Key/Value Parser
 
-Parses strings like `key1=value1 key2="some other value"` into a å`map[string]string`.
+Parses strings like `key1=value1 key2="some other value"` into a `map[string]string`.
 
 ```go
 
