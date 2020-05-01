@@ -56,8 +56,13 @@ func HasRequiredOptions(cfg *viper.Viper, opts []string) error {
 			panic(fmt.Errorf("option not defined: %s", opt))
 		}
 
-		// If a string, check that it is not empty.
+		// If val is a string, check that it is not empty.
 		if s, ok := val.(string); ok && s == "" {
+			return ErrMissingOption(opt)
+		}
+
+		// If val is an int, check that it is not zero.
+		if i, ok := val.(int); ok && i == 0 {
 			return ErrMissingOption(opt)
 		}
 	}
