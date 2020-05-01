@@ -2,9 +2,7 @@
 
 [![Build Status](https://travis-ci.org/cpliakas/cliutil.svg?branch=master)](https://travis-ci.org/cpliakas/cliutil)
 
-Helper functions that simplify writing CLI tools in Golang using the
-[Cobra](https://github.com/spf13/cobra) and [Viper](https://github.com/spf13/viper)
-libraries.
+Helper functions that simplify writing CLI tools in Golang using the [Cobra](https://github.com/spf13/cobra) and [Viper](https://github.com/spf13/viper) libraries.
 
 ## Installation
 
@@ -47,10 +45,25 @@ func init() {
 }
 ```
 
+Or ...
+
+```go
+
+var myCfg *viper.Viper
+
+func init() {
+	var flags *cliutil.Flagger
+	myCfg, flagger = cliutil.AddCommand(rootCmd, myCmd, myCfg, "MYAPP")
+
+	flags.String("log-level", "l", "info", "the minimum log level")
+	flags.Int("max-num", "n", 100, "the maximum number of something")
+}
+
+```
+
 ### Key/Value Parser
 
-Parses strings like `key1=value1 key2="some other value"` into a
-`map[string]string`.
+Parses strings like `key1=value1 key2="some other value"` into a å`map[string]string`.
 
 ```go
 
@@ -89,7 +102,7 @@ func doStuff() {
 
 ### Leveled Logger with Context
 
-A simple, leveled logger with log tags derived from context.
+A simple, leveled logger with log tags derived from context. The defaults are inspired by the [best practices](https://dev.splunk.com/enterprise/docs/developapps/logging/loggingbestpractices/) suggested by Splunk.
 
 ```go
 func main() {
