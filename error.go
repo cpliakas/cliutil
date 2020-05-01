@@ -12,28 +12,28 @@ import (
 type ErrMissingArgument string
 
 func (e ErrMissingArgument) Error() string {
-	return fmt.Sprintf("missing required argument: %s", string(e))
+	return fmt.Sprintf("missing required argument (%s)", string(e))
 }
 
 // ErrInvalidArgument returns an error when the passed option is not valid.
 type ErrInvalidArgument string
 
 func (e ErrInvalidArgument) Error() string {
-	return fmt.Sprintf("argument not valid: %s", string(e))
+	return fmt.Sprintf("argument not valid (%s)", string(e))
 }
 
 // ErrMissingOption returns an error when a required option is empty.
 type ErrMissingOption string
 
 func (e ErrMissingOption) Error() string {
-	return fmt.Sprintf("missing required option: %s", string(e))
+	return fmt.Sprintf("missing required option (%s)", string(e))
 }
 
 // ErrInvalidOption returns an error when the passed option is not valid.
 type ErrInvalidOption string
 
 func (e ErrInvalidOption) Error() string {
-	return fmt.Sprintf("option not valid: %s", string(e))
+	return fmt.Sprintf("option not valid (%s)", string(e))
 }
 
 // ErrNotFound returns an error when the passed resource is not found.
