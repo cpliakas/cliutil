@@ -90,7 +90,8 @@ func NewLogger(level string) *LeveledLogger {
 	return logger
 }
 
-// SetLevel sets the minimum log level.
+// SetLevel sets the minimum log level. The log level defaults to "info" if the
+// passed log level is not valid.
 func (l *LeveledLogger) SetLevel(level string) {
 	l.level = LogLevel(level)
 }
@@ -99,6 +100,20 @@ func (l *LeveledLogger) SetLevel(level string) {
 func (l *LeveledLogger) SetOutput(w io.Writer) {
 	for _, logger := range l.loggers {
 		logger.SetOutput(w)
+	}
+}
+
+// SetFlags sets the output flags for all loggers.
+func (l *LeveledLogger) SetFlags(flag int) {
+	for _, logger := range l.loggers {
+		logger.SetFlags(flag)
+	}
+}
+
+// SetPrefix sets the prefix for all loggers.
+func (l *LeveledLogger) SetPrefix(prefix string) {
+	for _, logger := range l.loggers {
+		logger.SetPrefix(prefix)
 	}
 }
 
