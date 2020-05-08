@@ -49,6 +49,18 @@ func (f *Flagger) PersistentBool(name, shorthand string, value bool, usage strin
 	f.cfg.BindPFlag(name, f.cmd.PersistentFlags().Lookup(name))
 }
 
+// Float64 adds a local flag that accepts a 64-bit float.
+func (f *Flagger) Float64(name, shorthand string, value float64, usage string) {
+	f.cmd.Flags().Float64P(name, shorthand, value, usage)
+	f.cfg.BindPFlag(name, f.cmd.Flags().Lookup(name))
+}
+
+// PersistentFloat64 adds a persistent flag that accepts a 64-bit float.
+func (f *Flagger) PersistentFloat64(name, shorthand string, value float64, usage string) {
+	f.cmd.PersistentFlags().Float64P(name, shorthand, value, usage)
+	f.cfg.BindPFlag(name, f.cmd.PersistentFlags().Lookup(name))
+}
+
 // Int adds a local flag that accepts an integer.
 func (f *Flagger) Int(name, shorthand string, value int, usage string) {
 	f.cmd.Flags().IntP(name, shorthand, value, usage)
@@ -73,14 +85,34 @@ func (f *Flagger) PersistentString(name, shorthand, value, usage string) {
 	f.cfg.BindPFlag(name, f.cmd.PersistentFlags().Lookup(name))
 }
 
-// Float64 adds a local flag that accepts a 64-bit float.
-func (f *Flagger) Float64(name, shorthand string, value float64, usage string) {
-	f.cmd.Flags().Float64P(name, shorthand, value, usage)
-	f.cfg.BindPFlag(name, f.cmd.Flags().Lookup(name))
+//
+// Helper commands that set a value only of the option was passed.
+//
+
+// SetBoolValue sets s if the name flag is passed.
+func SetBoolValue(cfg *viper.Viper, name string, b *bool) {
+	if cfg.IsSet(name) {
+		*b = cfg.GetBool(name)
+	}
 }
 
-// PersistentFloat64 adds a persistent flag that accepts a 64-bit float.
-func (f *Flagger) PersistentFloat64(name, shorthand string, value float64, usage string) {
-	f.cmd.PersistentFlags().Float64P(name, shorthand, value, usage)
-	f.cfg.BindPFlag(name, f.cmd.PersistentFlags().Lookup(name))
+// SetFloat64Value sets f if the name flag is passed.
+func SetFloat64Value(cfg *viper.Viper, name string, f *float64) {
+	if cfg.IsSet(name) {
+		*f = cfg.GetFloat64(name)
+	}
+}
+
+// SetIntValue sets s if the name flag is passed.
+func SetIntValue(cfg *viper.Viper, name string, i *int) {
+	if cfg.IsSet(name) {
+		*i = cfg.GetInt(name)
+	}
+}
+
+// SetStringValue sets s if the name flag is passed.
+func SetStringValue(cfg *viper.Viper, name string, s *string) {
+	if cfg.IsSet(name) {
+		*s = cfg.GetString(name)
+	}
 }
