@@ -36,10 +36,14 @@ const LogTagTransactionID = "transid"
 // logLevels is a map of log level names to Log* constant.
 var logLevels map[string]int
 
+// MessageWriter defines a function the writes the log messages.
+type MessageWriter func(ctx context.Context, logger *log.Logger, level string, message string, err error)
+
 // LeveledLogger is a simple leveled logger that writes logs to STDOUT.
 type LeveledLogger struct {
 	level   int
 	loggers []*log.Logger
+	writer  MessageWriter
 }
 
 // LogLevel* represents log levels as integers for comparrison.
@@ -79,7 +83,10 @@ func NewLoggerWithContext(ctx context.Context, level string) (context.Context, *
 // NewLogger returns a LeveledLogger that writes logs to either os.Stdout or
 // ioutil.Discard depending on the passed minimum log level.
 func NewLogger(level string) *LeveledLogger {
-	logger := &LeveledLogger{level: LogLevel(level)}
+	logger := &LeveledLogger{
+		level:  LogLevel(level),
+		writer: SplunkMessageWriter,
+	}
 
 	flags := log.Ldate | log.Ltime | log.Lmicroseconds | log.LUTC
 	logger.loggers = make([]*log.Logger, 5)
@@ -117,9 +124,14 @@ func (l *LeveledLogger) SetPrefix(prefix string) {
 	}
 }
 
+// SetMessageWriter sets the MessageWriter for all loggers.
+func (l *LeveledLogger) SetMessageWriter(fn MessageWriter) {
+	l.writer = fn
+}
+
 // Fatal writes an fatal level log and exits with a non-zero exit code.
 func (l LeveledLogger) Fatal(ctx context.Context, message string, err error) {
-	printLog(ctx, l.level < LogLevelFatal, l.loggers[0], "FATAL", message, err)
+	l.printLog(ctx, l.level < LogLevelFatal, l.loggers[0], "FATAL", message, err)
 	os.Exit(1)
 }
 
@@ -133,7 +145,7 @@ func (l LeveledLogger) FatalIfError(ctx context.Context, message string, err err
 
 // Error writes an error level log.
 func (l LeveledLogger) Error(ctx context.Context, message string, err error) {
-	printLog(ctx, l.level < LogLevelError, l.loggers[1], "ERROR", message, err)
+	l.printLog(ctx, l.level < LogLevelError, l.loggers[1], "ERROR", message, err)
 }
 
 // ErrorIfError writes an error level log if err is not nil.
@@ -145,17 +157,24 @@ func (l LeveledLogger) ErrorIfError(ctx context.Context, message string, err err
 
 // Notice writes an notice level log.
 func (l LeveledLogger) Notice(ctx context.Context, message string) {
-	printLog(ctx, l.level < LogLevelNotice, l.loggers[2], "NOTICE", message, nil)
+	l.printLog(ctx, l.level < LogLevelNotice, l.loggers[2], "NOTICE", message, nil)
 }
 
 // Info writes an info level log.
 func (l LeveledLogger) Info(ctx context.Context, message string) {
-	printLog(ctx, l.level < LogLevelInfo, l.loggers[3], "INFO", message, nil)
+	l.printLog(ctx, l.level < LogLevelInfo, l.loggers[3], "INFO", message, nil)
 }
 
 // Debug writes a debug level log.
 func (l LeveledLogger) Debug(ctx context.Context, message string) {
-	printLog(ctx, l.level < LogLevelDebug, l.loggers[4], "DEBUG", message, nil)
+	l.printLog(ctx, l.level < LogLevelDebug, l.loggers[4], "DEBUG", message, nil)
+}
+
+// printLog writes the log message using LeveledLogger.writer.
+func (l *LeveledLogger) printLog(ctx context.Context, skip bool, logger *log.Logger, level string, message string, err error) {
+	if !skip {
+		l.writer(ctx, logger, level, message, err)
+	}
 }
 
 // ContextWithLogTag returns a new context with log tags appended.
@@ -182,10 +201,11 @@ func ContextWithLogTag(ctx context.Context, key string, val string) context.Cont
 	return context.WithValue(ctx, CtxLogTags, tag)
 }
 
-func printLog(ctx context.Context, skip bool, logger *log.Logger, level string, message string, err error) {
-	if skip {
-		return
-	}
+// SplunkMessageWriter formats log messages according to Splunk's best
+// practices. It is the default MessageWriter.
+//
+// See https://dev.splunk.com/enterprise/docs/developapps/addsupport/logging/loggingbestpractices/
+func SplunkMessageWriter(ctx context.Context, logger *log.Logger, level string, message string, err error) {
 
 	// Initialize the log message Printf() format.
 	format := "%s message=%q"
