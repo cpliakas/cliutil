@@ -134,12 +134,12 @@ func (f *Flagger) SetOptions(item interface{}) (err error) {
 		field := val.Type().Field(i)
 
 		// Recurse if we encounter an embedded type.
-		if field.Anonymous {
-			if err = f.SetOptions(val.Field(i).Interface()); err != nil {
-				return
-			}
-			continue
-		}
+		// if field.Anonymous {
+		// 	if err = f.SetOptions(val.Field(i).Interface()); err != nil {
+		// 		return
+		// 	}
+		// 	continue
+		// }
 
 		// Get the cliutil tag, continue if empty.
 		tag := field.Tag.Get(TagName)
@@ -199,12 +199,12 @@ func GetOptions(item interface{}, cfg *viper.Viper) (err error) {
 		field := val.Type().Field(i)
 
 		// Recurse if we encounter an embedded type.
-		if field.Anonymous {
-			if err = GetOptions(val.Field(i).Interface(), cfg); err != nil {
-				return
-			}
-			continue
-		}
+		// if field.Anonymous {
+		// 	if err = GetOptions(val.Field(i).Interface(), cfg); err != nil {
+		// 		return
+		// 	}
+		// 	continue
+		// }
 
 		// Get the cliutil tag, continue if empty.
 		tag := field.Tag.Get(TagName)
