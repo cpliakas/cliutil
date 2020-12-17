@@ -1,11 +1,17 @@
 package cliutil
 
 import (
+	"fmt"
+	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+// TagName is the name of the tag.
+const TagName = "cliutil"
 
 // InitConfig returns a *viper.Viper with an environment variable prefix set
 // so that options can be passed from environment variables.
@@ -86,7 +92,7 @@ func (f *Flagger) PersistentString(name, shorthand, value, usage string) {
 }
 
 //
-// Helper commands that set a value only of the option was passed.
+// Helper commands that set a value only if the option was passed.
 //
 
 // SetBoolValue sets s if the name flag is passed.
@@ -115,4 +121,118 @@ func SetStringValue(cfg *viper.Viper, name string, s *string) {
 	if cfg.IsSet(name) {
 		*s = cfg.GetString(name)
 	}
+}
+
+//
+// Automatically set and get flags based on the cliutil tag.
+//
+
+// SetOptions sets flags based on the cliutil tag.
+func (f *Flagger) SetOptions(item interface{}) (err error) {
+	val := reflect.ValueOf(item).Elem()
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Type().Field(i)
+
+		// Recurse if we encounter an embedded type.
+		if field.Anonymous {
+			if err = f.SetOptions(val.Field(i).Interface()); err != nil {
+				return
+			}
+			continue
+		}
+
+		// Get the cliutil tag, continue if empty.
+		tag := field.Tag.Get(TagName)
+		if tag == "" {
+			continue
+		}
+
+		// Parse the values, which is in the format ParseKeyValue expects.
+		vals := ParseKeyValue(tag)
+		if name, ok := vals["option"]; ok {
+			t := field.Type.String()
+			switch t {
+			case "string":
+				f.String(name, vals["short"], vals["default"], vals["usage"])
+			case "int":
+				var i int
+				if s, ok := vals["default"]; ok {
+					i, err = strconv.Atoi(s)
+					if err != nil {
+						return fmt.Errorf("value not an integer: field=%q type=%q value=%q", field.Name, t, s)
+					}
+				}
+				f.Int(name, vals["short"], i, vals["usage"])
+			case "bool":
+				var b bool
+				if s, ok := vals["default"]; ok {
+					b, err = strconv.ParseBool(s)
+					if err != nil {
+						return fmt.Errorf("value not a bool: field=%q type=%q value=%q", field.Name, t, s)
+					}
+				}
+				f.Bool(name, vals["short"], b, vals["usage"])
+			case "float64":
+				var f64 float64
+				if s, ok := vals["default"]; ok {
+					f64, err = strconv.ParseFloat(s, 64)
+					if err != nil {
+						return fmt.Errorf("value not a float64: field=%q type=%q value=%q", field.Name, t, s)
+					}
+				}
+				f.Float64(name, vals["short"], f64, vals["usage"])
+			default:
+				return fmt.Errorf("type not supported: field=%q type=%q", field.Name, t)
+			}
+		}
+	}
+
+	return
+}
+
+// GetOptions gets values from cfg and sets them in item.
+func GetOptions(item interface{}, cfg *viper.Viper) (err error) {
+	val := reflect.ValueOf(item).Elem()
+	ival := reflect.Indirect(reflect.ValueOf(item))
+
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Type().Field(i)
+
+		// Recurse if we encounter an embedded type.
+		if field.Anonymous {
+			if err = GetOptions(val.Field(i).Interface(), cfg); err != nil {
+				return
+			}
+			continue
+		}
+
+		// Get the cliutil tag, continue if empty.
+		tag := field.Tag.Get(TagName)
+		if tag == "" {
+			continue
+		}
+
+		// Get the field name.
+		fname := ival.Type().Field(i).Name
+
+		// Parse the values, which is in the format ParseKeyValue expects.
+		vals := ParseKeyValue(tag)
+		if name, ok := vals["option"]; ok {
+			t := field.Type.String()
+			switch t {
+			case "string":
+				val.FieldByName(fname).SetString(cfg.GetString(name))
+			case "int":
+				val.FieldByName(fname).SetInt(int64(cfg.GetInt(name)))
+			case "bool":
+				val.FieldByName(fname).SetBool(cfg.GetBool(name))
+			case "float64":
+				val.FieldByName(fname).SetFloat(cfg.GetFloat64(name))
+			default:
+				return fmt.Errorf("type not supported: field=%q type=%q", field.Name, t)
+			}
+		}
+	}
+
+	return
 }
