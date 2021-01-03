@@ -1,6 +1,6 @@
 # cliutil
 
-[![Build Status](https://travis-ci.org/cpliakas/cliutil.svg?branch=master)](https://travis-ci.org/cpliakas/cliutil)
+[![Build Status](https://travis-ci.org/cpliakas/cliutil.svg?branch=main)](https://travis-ci.org/cpliakas/cliutil)
 
 Helper functions that simplify writing CLI tools in Golang using the [Cobra](https://github.com/spf13/cobra) and [Viper](https://github.com/spf13/viper) libraries.
 
