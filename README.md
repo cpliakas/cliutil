@@ -22,7 +22,7 @@ import "github.com/cpliakas/cliutil"
 
 ### Flagger
 
-Convenience functions that make it easier to add options to commands.
+Convenience functions that make it easier to add options to commands when using [Cobra](https://github.com/spf13/cobra) and [Viper](https://github.com/spf13/viper).
 
 ```go
 
@@ -55,7 +55,7 @@ var myCfg *viper.Viper
 
 func init() {
 	var flags *cliutil.Flagger
-	myCfg, flagger = cliutil.AddCommand(rootCmd, myCmd, myCfg, "MYAPP")
+	myCfg, flagger = cliutil.AddCommand(rootCmd, myCmd, "MYAPP")
 
 	flags.String("log-level", "l", "info", "the minimum log level")
 	flags.Int("max-num", "n", 100, "the maximum number of something")

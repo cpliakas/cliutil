@@ -25,9 +25,9 @@ func InitConfig(envPrefix string) (c *viper.Viper) {
 
 // AddCommand adds a comand to it's parent, initializes the configuration,
 // and returns a flagger to easily add options.
-func AddCommand(parentCmd, cmd *cobra.Command, cfg *viper.Viper, envPrefix string) (*viper.Viper, *Flagger) {
+func AddCommand(parentCmd, cmd *cobra.Command, envPrefix string) (*viper.Viper, *Flagger) {
 	parentCmd.AddCommand(cmd)
-	cfg = InitConfig(envPrefix)
+	cfg := InitConfig(envPrefix)
 	return cfg, NewFlagger(cmd, cfg)
 }
 
