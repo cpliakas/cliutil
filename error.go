@@ -32,8 +32,8 @@ func HandleError(cmd *cobra.Command, err error, prefixes ...string) {
 func WriteError(w io.Writer, err error, prefixes ...string) {
 	var format string
 	for _, prefix := range prefixes {
-		format = format + prefix + ": "
+		format += prefix + ": "
 	}
-	format = format + "%v\n\n"
+	format += "%v\n\n"
 	fmt.Fprintf(w, format, err)
 }
