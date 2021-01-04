@@ -63,6 +63,51 @@ func init() {
 
 ```
 
+### Option Struct Tags
+
+Set and get options via the `cliutil` struct tag, as shown with the `PrintInput` struct below:
+
+```go
+package cmd
+
+import (
+	"fmt"
+
+	"github.com/cpliakas/cliutil"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+)
+
+type PrintInput struct {
+	Text string `cliutil:"option=text short=t default='default value' usage='text printed to stdout'"`
+}
+
+var printCfg *viper.Viper
+
+var printCmd = &cobra.Command{
+	Use:   "print",
+	Short: "Print text to STDOUT",
+	Run: func(cmd *cobra.Command, args []string) {
+		input := &PrintInput{}
+		cliutil.GetOptions(input, printCfg)
+		fmt.Println(input.Text)
+	},
+}
+
+func init() {
+	var flags *cliutil.Flagger
+	printCfg, flags = cliutil.AddCommand(rootCmd, printCmd, "MYAPP")
+	flags.SetOptions(&PrintInput{})
+}
+```
+
+Assuming `rootCmd` exists and defines the `myapp` command:
+
+```
+$> ./myapp print --text hello
+hello
+```
+
 ### Key/Value Parser
 
 Parses strings like `key1=value1 key2="some other value"` into a `map[string]string`.
