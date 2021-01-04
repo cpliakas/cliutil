@@ -16,8 +16,7 @@ type ctxKey int
 
 // Ctx* constants contain the keys for contexts with values.
 const (
-	CtxCmdArgs ctxKey = iota
-	CtxLogTags
+	CtxLogTags ctxKey = iota
 )
 
 // Log* constants represent the log levels as strings for configuration.
@@ -85,7 +84,7 @@ func NewLoggerWithContext(ctx context.Context, level string) (context.Context, *
 func NewLogger(level string) *LeveledLogger {
 	logger := &LeveledLogger{
 		level:  LogLevel(level),
-		writer: SplunkMessageWriter,
+		writer: DefaultMessageWriter,
 	}
 
 	flags := log.Ldate | log.Ltime | log.Lmicroseconds | log.LUTC
@@ -178,20 +177,21 @@ func (l *LeveledLogger) printLog(ctx context.Context, skip bool, logger *log.Log
 }
 
 // ContextWithLogTag returns a new context with log tags appended.
-func ContextWithLogTag(ctx context.Context, key string, val string) context.Context {
+func ContextWithLogTag(ctx context.Context, key string, val interface{}) context.Context {
 	if !IsLetters(key) {
 		panic(fmt.Errorf("key must only contain letters: %q passed", key))
 	}
 
+	s := fmt.Sprintf("%v", val)
 	var modifier string
-	if HasSpace(val) {
+	if HasSpace(s) {
 		modifier = "%q"
 	} else {
 		modifier = "%s"
 	}
 
 	format := key + "=" + modifier
-	tag := fmt.Sprintf(format, val)
+	tag := fmt.Sprintf(format, s)
 
 	tags := ctx.Value(CtxLogTags)
 	if tags != nil {
@@ -201,11 +201,11 @@ func ContextWithLogTag(ctx context.Context, key string, val string) context.Cont
 	return context.WithValue(ctx, CtxLogTags, tag)
 }
 
-// SplunkMessageWriter formats log messages according to Splunk's best
+// DefaultMessageWriter formats log messages according to Splunk's best
 // practices. It is the default MessageWriter.
 //
 // See https://dev.splunk.com/enterprise/docs/developapps/addsupport/logging/loggingbestpractices/
-func SplunkMessageWriter(ctx context.Context, logger *log.Logger, level string, message string, err error) {
+func DefaultMessageWriter(ctx context.Context, logger *log.Logger, level string, message string, err error) {
 
 	// Initialize the log message Printf() format.
 	format := "%s message=%q"
