@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/cpliakas/cliutil.svg?branch=main)](https://travis-ci.org/cpliakas/cliutil)
 [![Go Reference](https://pkg.go.dev/badge/github.com/cpliakas/cliutil.svg)](https://pkg.go.dev/github.com/cpliakas/cliutil)
+[![Go Report Card](https://goreportcard.com/badge/github.com/cpliakas/cliutil)](https://goreportcard.com/report/github.com/cpliakas/cliutil)
 
 Helper functions that simplify writing CLI tools in Golang using the [Cobra](https://github.com/spf13/cobra) and [Viper](https://github.com/spf13/viper) libraries.
 
