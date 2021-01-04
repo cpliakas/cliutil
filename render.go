@@ -28,7 +28,7 @@ func FormatJSONWithFilter(v interface{}, filter string) (out string, err error) 
 // PrintJSON writes pretty-printed JSON to STDOUT.
 func PrintJSON(v interface{}) (err error) {
 	var out string
-	if out, err = FormatJSON(v); err != nil {
+	if out, err = FormatJSON(v); err == nil {
 		_, err = fmt.Println(out)
 	}
 	return
