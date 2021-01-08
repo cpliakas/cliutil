@@ -1,6 +1,7 @@
 package cliutil
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -128,111 +129,196 @@ func SetStringValue(cfg *viper.Viper, name string, s *string) {
 //
 
 // SetOptions sets flags based on the cliutil tag.
-func (f *Flagger) SetOptions(item interface{}) (err error) {
-	val := reflect.ValueOf(item).Elem()
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Type().Field(i)
+func (f *Flagger) SetOptions(v interface{}) error {
 
-		// Recurse if we encounter an embedded type.
-		// if field.Anonymous {
-		// 	if err = f.SetOptions(val.Field(i).Interface()); err != nil {
-		// 		return
-		// 	}
+	// Get the reflection value and type.
+	rv := reflect.ValueOf(v)
+	rt := reflect.TypeOf(v)
+
+	// Resolve pointers.
+	if rv.Kind() == reflect.Ptr {
+		if rv.IsZero() {
+			return errors.New("value is a zero value for its type")
+		}
+		rv = rv.Elem()
+		rt = rt.Elem()
+	}
+
+	// Structs only!
+	if rv.Kind() != reflect.Struct {
+		return errors.New("value must be a struct")
+	}
+
+	// Iterate over the struct's field.
+	for idx := 0; idx < rt.NumField(); idx++ {
+		rvf := rv.Field(idx)
+		rtf := rt.Field(idx)
+
+		// Skip fields that cannot interface, e.g., unexported field.
+		if !rvf.CanInterface() {
+			continue
+		}
+
+		// Resolve pointers.
+		if rvf.Kind() == reflect.Ptr {
+			if rvf.IsZero() {
+				continue
+			}
+			rvf = rvf.Elem()
+		}
+
+		// Recurse into structs.
+		if rvf.Kind() == reflect.Struct {
+			err := f.SetOptions(rvf.Interface())
+			if err != nil {
+				return err
+			}
+			continue
+		}
+
+		// // Skip fields that cannot be set.
+		// field := rv.FieldByName(rtf.Name)
+		// if !field.CanSet() {
 		// 	continue
 		// }
 
-		// Get the cliutil tag, continue if empty.
-		tag := field.Tag.Get(TagName)
+		// Get the cliutil tag.
+		tag := rtf.Tag.Get(TagName)
 		if tag == "" {
 			continue
 		}
 
-		// Parse the values, which is in the format ParseKeyValue expects.
+		// Parse the option from the tag.
 		vals := ParseKeyValue(tag)
-		if name, ok := vals["option"]; ok {
-			t := field.Type.String()
-			switch t {
-			case "string":
-				f.String(name, vals["short"], vals["default"], vals["usage"])
-			case "int":
-				var i int
-				if s, ok := vals["default"]; ok {
-					i, err = strconv.Atoi(s)
-					if err != nil {
-						return fmt.Errorf("value not an integer: field=%q type=%q value=%q", field.Name, t, s)
-					}
+		name, ok := vals["option"]
+		if !ok {
+			continue
+		}
+
+		// Set the options.
+		switch rvf.Kind() {
+		case reflect.String:
+			f.String(name, vals["short"], vals["default"], vals["usage"])
+		case reflect.Int:
+			var i int
+			if s, ok := vals["default"]; ok {
+				var err error
+				i, err = strconv.Atoi(s)
+				if err != nil {
+					return fmt.Errorf("expecting %s", reflect.Int)
 				}
-				f.Int(name, vals["short"], i, vals["usage"])
-			case "bool":
-				var b bool
-				if s, ok := vals["default"]; ok {
-					b, err = strconv.ParseBool(s)
-					if err != nil {
-						return fmt.Errorf("value not a bool: field=%q type=%q value=%q", field.Name, t, s)
-					}
-				}
-				f.Bool(name, vals["short"], b, vals["usage"])
-			case "float64":
-				var f64 float64
-				if s, ok := vals["default"]; ok {
-					f64, err = strconv.ParseFloat(s, 64)
-					if err != nil {
-						return fmt.Errorf("value not a float64: field=%q type=%q value=%q", field.Name, t, s)
-					}
-				}
-				f.Float64(name, vals["short"], f64, vals["usage"])
-			default:
-				return fmt.Errorf("type not supported: field=%q type=%q", field.Name, t)
 			}
+			f.Int(name, vals["short"], i, vals["usage"])
+		case reflect.Bool:
+			var b bool
+			if s, ok := vals["default"]; ok {
+				var err error
+				b, err = strconv.ParseBool(s)
+				if err != nil {
+					return fmt.Errorf("expecting %s", reflect.Bool)
+				}
+			}
+			f.Bool(name, vals["short"], b, vals["usage"])
+		case reflect.Float64:
+			var f64 float64
+			if s, ok := vals["default"]; ok {
+				var err error
+				f64, err = strconv.ParseFloat(s, 64)
+				if err != nil {
+					return fmt.Errorf("expecting %s", reflect.Float32)
+				}
+			}
+			f.Float64(name, vals["short"], f64, vals["usage"])
+		default:
+			return fmt.Errorf("type not supported: %s", rvf.Kind())
 		}
 	}
 
-	return
+	return nil
 }
 
 // GetOptions gets values from cfg and sets them in item.
-func GetOptions(item interface{}, cfg *viper.Viper) (err error) {
-	val := reflect.ValueOf(item).Elem()
-	ival := reflect.Indirect(reflect.ValueOf(item))
+func GetOptions(v interface{}, cfg *viper.Viper) (err error) {
+	rv := reflect.ValueOf(v)
+	rt := reflect.TypeOf(v)
+	return getOptions(rv, rt, cfg)
+}
 
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Type().Field(i)
+func getOptions(rv reflect.Value, rt reflect.Type, cfg *viper.Viper) error {
 
-		// Recurse if we encounter an embedded type.
-		// if field.Anonymous {
-		// 	if err = GetOptions(val.Field(i).Interface(), cfg); err != nil {
-		// 		return
-		// 	}
-		// 	continue
-		// }
+	// Resolve pointers.
+	if rv.Kind() == reflect.Ptr {
+		if rv.IsZero() {
+			return errors.New("value is a zero value for its type")
+		}
+		rv = rv.Elem()
+		rt = rt.Elem()
+	}
 
-		// Get the cliutil tag, continue if empty.
-		tag := field.Tag.Get(TagName)
+	// Structs only!
+	if rv.Kind() != reflect.Struct {
+		return errors.New("value must be a struct")
+	}
+
+	// Iterate over the struct's field.
+	for idx := 0; idx < rt.NumField(); idx++ {
+		rvf := rv.Field(idx)
+		rtf := rt.Field(idx)
+
+		// Skip fields that cannot interface, e.g., unexported field.
+		if !rvf.CanInterface() {
+			continue
+		}
+
+		// Resolve pointers.
+		if rvf.Kind() == reflect.Ptr {
+			if rvf.IsZero() {
+				continue
+			}
+			rvf = rvf.Elem()
+		}
+
+		// Recurse into structs.
+		if rvf.Kind() == reflect.Struct {
+			err := getOptions(rvf, rvf.Type(), cfg)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+
+		// Skip fields that cannot be set.
+		field := rv.FieldByName(rtf.Name)
+		if !field.CanSet() {
+			continue
+		}
+
+		// Get the cliutil tag.
+		tag := rtf.Tag.Get(TagName)
 		if tag == "" {
 			continue
 		}
 
-		// Get the field name.
-		fname := ival.Type().Field(i).Name
-
-		// Parse the values, which is in the format ParseKeyValue expects.
+		// Parse the option from the tag.
 		vals := ParseKeyValue(tag)
-		if name, ok := vals["option"]; ok {
-			t := field.Type.String()
-			switch t {
-			case "string":
-				val.FieldByName(fname).SetString(cfg.GetString(name))
-			case "int":
-				val.FieldByName(fname).SetInt(int64(cfg.GetInt(name)))
-			case "bool":
-				val.FieldByName(fname).SetBool(cfg.GetBool(name))
-			case "float64":
-				val.FieldByName(fname).SetFloat(cfg.GetFloat64(name))
-			default:
-				return fmt.Errorf("type not supported: field=%q type=%q", field.Name, t)
-			}
+		name, ok := vals["option"]
+		if !ok {
+			continue
+		}
+
+		switch rvf.Kind() {
+		case reflect.String:
+			field.SetString(cfg.GetString(name))
+		case reflect.Int:
+			field.SetInt(int64(cfg.GetInt(name)))
+		case reflect.Bool:
+			field.SetBool(cfg.GetBool(name))
+		case reflect.Float64:
+			field.SetFloat(cfg.GetFloat64(name))
+		default:
+			return fmt.Errorf("type not supported: %s", rvf.Kind())
 		}
 	}
 
-	return
+	return nil
 }

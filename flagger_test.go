@@ -9,10 +9,26 @@ import (
 )
 
 type Input struct {
-	ValueOne   string  `cliutil:"option=value-one short=O default='some value' usage='value one usage'"`
-	ValueTwo   int     `cliutil:"option=value-two default=1"`
-	ValueThree bool    `cliutil:"option=value-three default=true"`
-	ValueFour  float64 `cliutil:"option=value-four default=3.14"`
+	InputNested    InputNested
+	InputNestedPtr *InputNestedPtr
+	InputEmbedded
+	*InputEmbeddedPtr
+}
+
+type InputNested struct {
+	ValueOne string `cliutil:"option=value-one short=O default='some value' usage='value one usage'"`
+}
+
+type InputNestedPtr struct {
+	ValueTwo int `cliutil:"option=value-two default=1"`
+}
+
+type InputEmbedded struct {
+	ValueThree bool `cliutil:"option=value-three default=true"`
+}
+
+type InputEmbeddedPtr struct {
+	ValueFour float64 `cliutil:"option=value-four default=3.14"`
 }
 
 func TestSetOptions(t *testing.T) {
@@ -25,7 +41,11 @@ func TestSetOptions(t *testing.T) {
 	viper := viper.New()
 	flags := cliutil.NewFlagger(cmd, viper)
 
-	input := &Input{}
+	input := &Input{
+		InputNestedPtr:   &InputNestedPtr{},
+		InputEmbeddedPtr: &InputEmbeddedPtr{},
+	}
+
 	err := flags.SetOptions(input)
 	if err != nil {
 		t.Fatal(err)
@@ -62,7 +82,11 @@ func TestGetOptions(t *testing.T) {
 	viper := viper.New()
 	flags := cliutil.NewFlagger(cmd, viper)
 
-	input := &Input{}
+	input := &Input{
+		InputNestedPtr:   &InputNestedPtr{},
+		InputEmbeddedPtr: &InputEmbeddedPtr{},
+	}
+
 	err := flags.SetOptions(input)
 	if err != nil {
 		t.Fatal(err)
@@ -74,12 +98,12 @@ func TestGetOptions(t *testing.T) {
 	}
 
 	ex1 := "some value"
-	if actual := input.ValueOne; actual != ex1 {
+	if actual := input.InputNested.ValueOne; actual != ex1 {
 		t.Errorf("got %q, expected %q", actual, ex1)
 	}
 
 	ex2 := 1
-	if actual := input.ValueTwo; actual != ex2 {
+	if actual := input.InputNestedPtr.ValueTwo; actual != ex2 {
 		t.Errorf("got %v, expected %v", actual, ex2)
 	}
 
