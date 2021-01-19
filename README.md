@@ -91,7 +91,7 @@ var printCmd = &cobra.Command{
 	Short: "Print text to STDOUT",
 	Run: func(cmd *cobra.Command, args []string) {
 		input := &PrintInput{}
-		cliutil.GetOptions(input, printCfg)
+		cliutil.ReadOptions(input, printCfg)
 		fmt.Println(input.Text)
 	},
 }

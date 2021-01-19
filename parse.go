@@ -1,6 +1,8 @@
 package cliutil
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -48,4 +50,25 @@ func ParseKeyValue(s string) map[string]string {
 
 func isQuotationMark(c rune) bool {
 	return unicode.In(c, unicode.Quotation_Mark)
+}
+
+// ParseIntSlice parses a slice of integers from a string. We expect integers
+// to be separated by commas, e.g., "1,2,3 , 4,5"
+func ParseIntSlice(s string) ([]int, error) {
+	if s == "" {
+		return []int{}, nil
+	}
+
+	parts := strings.Split(s, ",")
+	v := make([]int, len(parts))
+
+	for idx, part := range parts {
+		fid, err := strconv.Atoi(strings.TrimSpace(part))
+		if err != nil {
+			return []int{}, fmt.Errorf("value at index %v is not a number: %w", idx, err)
+		}
+		v[idx] = fid
+	}
+
+	return v, nil
 }
