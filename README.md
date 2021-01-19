@@ -67,7 +67,7 @@ func init() {
 
 ### Option Struct Tags
 
-Set and get options via the `cliutil` struct tag, as shown with the `PrintInput` struct below:
+Set and read options via the `cliutil` struct tag, as shown with the `PrintOpts` struct below:
 
 ```go
 package cmd
@@ -80,7 +80,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-type PrintInput struct {
+type PrintOpts struct {
 	Text string `cliutil:"option=text short=t default='default value' usage='text printed to stdout'"`
 }
 
@@ -90,7 +90,7 @@ var printCmd = &cobra.Command{
 	Use:   "print",
 	Short: "Print text to STDOUT",
 	Run: func(cmd *cobra.Command, args []string) {
-		input := &PrintInput{}
+		input := &PrintOpts{}
 		cliutil.ReadOptions(input, printCfg)
 		fmt.Println(input.Text)
 	},
@@ -99,7 +99,7 @@ var printCmd = &cobra.Command{
 func init() {
 	var flags *cliutil.Flagger
 	printCfg, flags = cliutil.AddCommand(rootCmd, printCmd, "MYAPP")
-	flags.SetOptions(&PrintInput{})
+	flags.SetOptions(&PrintOpts{})
 }
 ```
 
