@@ -217,6 +217,10 @@ func (opt *IOReaderOption) Set(f *Flagger) error {
 
 // Read implements OptionType.Read.
 func (opt *IOReaderOption) Read(cfg *viper.Viper, field reflect.Value) error {
+	if !cfg.IsSet(opt.tag["option"]) {
+		return nil
+	}
+
 	u, err := url.Parse(cfg.GetString(opt.tag["option"]))
 	if err != nil {
 		return fmt.Errorf("error parsing uri: %w", err)
