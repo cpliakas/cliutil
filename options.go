@@ -3,6 +3,11 @@ package cliutil
 import (
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"os"
 	"reflect"
 	"strconv"
 
@@ -40,11 +45,12 @@ func RegisterOptionTypeFunc(name string, fn OptionTypeFunc) { optfn[name] = fn }
 
 func init() {
 	optfn = map[string]OptionTypeFunc{
-		"string":  NewStringOption,
-		"int":     NewIntOption,
-		"bool":    NewBoolOption,
-		"float64": NewFloat64Option,
-		"[]int":   NewIntSliceOption,
+		"string":   NewStringOption,
+		"int":      NewIntOption,
+		"bool":     NewBoolOption,
+		"float64":  NewFloat64Option,
+		"[]int":    NewIntSliceOption,
+		"ioreader": NewIOReaderOption,
 	}
 }
 
@@ -193,6 +199,53 @@ func (opt *IntSliceOption) Read(cfg *viper.Viper, field reflect.Value) error {
 		field.Set(reflect.Append(field, reflect.ValueOf(val)))
 	}
 	return err
+}
+
+// IOReaderOption implements Option for string options read from an io.Reader.
+type IOReaderOption struct {
+	tag map[string]string
+}
+
+// NewIOReaderOption is a OptionTypeFunc that returns a *GroupOption.
+func NewIOReaderOption(tag map[string]string) OptionType { return &IOReaderOption{tag} }
+
+// Set implements OptionType.Set.
+func (opt *IOReaderOption) Set(f *Flagger) error {
+	f.String(opt.tag["option"], opt.tag["short"], opt.tag["default"], opt.tag["usage"])
+	return nil
+}
+
+// Read implements OptionType.Read.
+func (opt *IOReaderOption) Read(cfg *viper.Viper, field reflect.Value) error {
+	u, err := url.Parse(cfg.GetString(opt.tag["option"]))
+	if err != nil {
+		return fmt.Errorf("error parsing uri: %w", err)
+	}
+
+	r, err := getReadCloser(u)
+	if err != nil {
+		return err
+	}
+
+	b, err := ioutil.ReadAll(r)
+	if err != nil {
+		return fmt.Errorf("error reading data: %w", err)
+	}
+
+	field.SetString(string(b))
+	return nil
+}
+
+func getReadCloser(u *url.URL) (io.ReadCloser, error) {
+	switch u.Scheme {
+	case "file", "":
+		return os.Open(u.Path)
+	case "http", "https":
+		resp, err := http.Get(u.String())
+		return resp.Body, err
+	default:
+		return nil, fmt.Errorf("%s: scheme not supported", u.Scheme)
+	}
 }
 
 // SetOptions sets flags based on the cliutil tag.
