@@ -35,8 +35,12 @@ func TestParseIntSlice(t *testing.T) {
 		exErr bool
 	}{
 		{"1,2,  3 ", []int{1, 2, 3}, false},
+		{"1,2:4 ", []int{1, 2, 3, 4}, false},
+		{"3:1", []int{3, 2, 1}, false},
 		{"", []int{}, false},
 		{"1,2,three", []int{}, true},
+		{"1:two", []int{}, true},
+		{"1:2:3", []int{}, true},
 	}
 
 	for _, tt := range tests {

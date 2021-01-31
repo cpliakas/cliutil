@@ -2,6 +2,7 @@ package cliutil
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"unicode"
@@ -53,22 +54,64 @@ func isQuotationMark(c rune) bool {
 }
 
 // ParseIntSlice parses a slice of integers from a string. We expect integers
-// to be separated by commas, e.g., "1,2,3 , 4,5"
+// and ranges to be separated by commas, e.g., 1,2,3:5 = []int{1,2,3,4,5}.
 func ParseIntSlice(s string) ([]int, error) {
 	if s == "" {
 		return []int{}, nil
 	}
 
-	parts := strings.Split(s, ",")
-	v := make([]int, len(parts))
+	elems := strings.Split(s, ",")
+	out := []int{}
 
-	for idx, part := range parts {
-		fid, err := strconv.Atoi(strings.TrimSpace(part))
+	for idx, elem := range elems {
+		i, err := parseRange(elem, idx)
 		if err != nil {
-			return []int{}, fmt.Errorf("value at index %v is not a number: %w", idx, err)
+			return []int{}, err
 		}
-		v[idx] = fid
+		out = append(out, i...)
 	}
 
-	return v, nil
+	return out, nil
+}
+
+func parseRange(elem string, idx int) (out []int, err error) {
+	elems := strings.Split(elem, ":")
+
+	switch len(elems) {
+	case 1:
+		out = make([]int, 1)
+		out[0], err = strconv.Atoi(strings.TrimSpace(elems[0]))
+		if err != nil {
+			err = fmt.Errorf("value at index %v is not a number: %w", idx, err)
+			return
+		}
+	case 2:
+		r := make([]int, 2)
+		for iidx, elem := range elems {
+			r[iidx], err = strconv.Atoi(strings.TrimSpace(elem))
+			if err != nil {
+				err = fmt.Errorf("range at index %v not valid: %w", idx, err)
+				return
+			}
+		}
+		out = Sequence(r[0], r[1])
+	default:
+		err = fmt.Errorf("range at index %v not valid: %w", idx, err)
+		return
+	}
+
+	return
+}
+
+// Sequence returns a sequencce of numbers between start and end as an []int.
+func Sequence(start, end int) []int {
+	a := make([]int, int(math.Abs(float64(start-end)))+1)
+	for i := range a {
+		if start < end {
+			a[i] = start + i
+		} else {
+			a[i] = start - i
+		}
+	}
+	return a
 }
