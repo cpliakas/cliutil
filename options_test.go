@@ -1,6 +1,8 @@
 package cliutil_test
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/cpliakas/cliutil"
@@ -37,7 +39,7 @@ type InputEmbeddedPtr struct {
 func TestReadOptions(t *testing.T) {
 	cmd := &cobra.Command{
 		Use:   "test",
-		Short: "test set optionss",
+		Short: "test read options",
 		Run:   func(cmd *cobra.Command, args []string) {},
 	}
 
@@ -82,5 +84,63 @@ func TestReadOptions(t *testing.T) {
 	ex5 := []int{1, 2, 3}
 	if diff := deep.Equal(input.ValueFive, ex5); diff != nil {
 		t.Error(diff)
+	}
+}
+
+type StdinInput struct {
+	Data string `cliutil:"option=data func=stdin"`
+}
+
+func TestReadStdinOptions(t *testing.T) {
+	cmd := &cobra.Command{
+		Use:   "test",
+		Short: "test read stdin option",
+		Run:   func(cmd *cobra.Command, args []string) {},
+	}
+
+	ex := "testing stdin"
+	b := []byte(ex)
+
+	// Create the temp file.
+	tmpfile, err := ioutil.TempFile(os.TempDir(), "cliutil-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	// Write the data.
+	if _, err := tmpfile.Write(b); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tmpfile.Seek(0, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	// Swap out os.Stdin for the tmpfile.
+	orig := os.Stdin
+	defer func() { os.Stdin = orig }() // Restore original Stdin
+	os.Stdin = tmpfile
+
+	v := viper.New()
+	flags := cliutil.NewFlagger(cmd, v)
+
+	input := &StdinInput{}
+
+	err = flags.SetOptions(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = cliutil.ReadOptions(input, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if actual := input.Data; actual != ex {
+		t.Errorf("got %q, expected %q", actual, ex)
+	}
+
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
 	}
 }

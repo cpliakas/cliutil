@@ -51,6 +51,7 @@ func init() {
 		"float64":  NewFloat64Option,
 		"[]int":    NewIntSliceOption,
 		"ioreader": NewIOReaderOption,
+		"stdin":    NewStdinOption,
 	}
 }
 
@@ -250,6 +251,50 @@ func getReadCloser(u *url.URL) (io.ReadCloser, error) {
 	default:
 		return nil, fmt.Errorf("%s: scheme not supported", u.Scheme)
 	}
+}
+
+// StdinOption implements Option for string options read via stdin.
+type StdinOption struct {
+	tag map[string]string
+}
+
+// NewStdinOption is an OptionTypeFunc that returns a *StdinOption.
+func NewStdinOption(tag map[string]string) OptionType { return &StdinOption{tag} }
+
+// Set implements OptionType.Set.
+func (opt *StdinOption) Set(f *Flagger) error {
+	f.String(opt.tag["option"], opt.tag["short"], opt.tag["default"], opt.tag["usage"])
+	return nil
+}
+
+// Read implements OptionType.Read.
+func (opt *StdinOption) Read(cfg *viper.Viper, field reflect.Value) (err error) {
+	s := cfg.GetString(opt.tag["option"])
+	if s == "" {
+		if s, err = readStdin(); err != nil {
+			return err
+		}
+	}
+	field.SetString(s)
+	return nil
+}
+
+func readStdin() (string, error) {
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		return "", fmt.Errorf("error getting info for stdin: %w", err)
+	}
+
+	if stat.Size() == 0 {
+		return "", nil
+	}
+
+	b, err := ioutil.ReadAll(os.Stdin)
+	if err != nil {
+		return "", fmt.Errorf("error reading stdin: %w", err)
+	}
+
+	return string(b), err
 }
 
 // SetOptions sets flags based on the cliutil tag.
