@@ -1,6 +1,8 @@
 # cliutil
 
+
 [![Build Status](https://travis-ci.org/cpliakas/cliutil.svg?branch=main)](https://travis-ci.org/cpliakas/cliutil)
+[![GitHub release](https://img.shields.io/github/release/cpliakas/cliutil.svg)](https://github.com/cpliakas/cliutil/releases/)
 [![Go Reference](https://pkg.go.dev/badge/github.com/cpliakas/cliutil.svg)](https://pkg.go.dev/github.com/cpliakas/cliutil)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cpliakas/cliutil)](https://goreportcard.com/report/github.com/cpliakas/cliutil)
 
@@ -117,7 +119,6 @@ type Input struct {
 	File string `cliutil:"option=file func=ioreader" usage='read data from file/url' `
 	Data string `cliutil:"option=data func=stdin"    usage='read data from STDIN'`
 }
-
 ```
 
 ### Key/Value Parser
