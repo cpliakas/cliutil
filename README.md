@@ -110,6 +110,8 @@ $> ./myapp print --text hello
 hello
 ```
 
+The `func` key allows for post-processing options. For example, setting `func=ioreader` and passing `/path/to/file` as the corresponding option will read the contents of the file into the field. Setting `func=stdin` will read `STDIN` into the field if the option isn't explicitly set.
+
 ### Key/Value Parser
 
 Parses strings like `key1=value1 key2="some other value"` into a `map[string]string`.
