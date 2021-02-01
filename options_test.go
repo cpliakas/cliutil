@@ -87,6 +87,60 @@ func TestReadOptions(t *testing.T) {
 	}
 }
 
+type IOReaderInput struct {
+	Data string `cliutil:"option=data func=ioreader"`
+}
+
+func TestReadIOReaderOptions(t *testing.T) {
+	cmd := &cobra.Command{
+		Use:   "test",
+		Short: "test read ioreader option",
+		Run:   func(cmd *cobra.Command, args []string) {},
+	}
+
+	ex := "testing ioreader"
+	b := []byte(ex)
+
+	// Create the temp file.
+	tmpfile, err := ioutil.TempFile(os.TempDir(), "cliutil-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	// Write the data.
+	if _, err := tmpfile.Write(b); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tmpfile.Seek(0, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	v := viper.New()
+	flags := cliutil.NewFlagger(cmd, v)
+	v.SetDefault("data", tmpfile.Name())
+
+	input := &IOReaderInput{}
+
+	err = flags.SetOptions(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = cliutil.ReadOptions(input, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if actual := input.Data; actual != ex {
+		t.Errorf("got %q, expected %q", actual, ex)
+	}
+
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 type StdinInput struct {
 	Data string `cliutil:"option=data func=stdin"`
 }
