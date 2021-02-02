@@ -198,3 +198,38 @@ func TestReadStdinOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+type MergeInput struct {
+	Data string `cliutil:"option=data"`
+}
+
+func TestMergeMeta(t *testing.T) {
+	cmd := &cobra.Command{
+		Use:   "test",
+		Short: "test merge options",
+		Run:   func(cmd *cobra.Command, args []string) {},
+	}
+
+	ex := "expected value"
+	meta := map[string]string{"default": ex}
+	cliutil.SetOptionMetadata("data", meta)
+
+	v := viper.New()
+	flags := cliutil.NewFlagger(cmd, v)
+
+	input := &MergeInput{}
+
+	err := flags.SetOptions(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = cliutil.ReadOptions(input, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if actual := input.Data; actual != ex {
+		t.Errorf("got %q, expected %q", actual, ex)
+	}
+}

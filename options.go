@@ -25,6 +25,37 @@ var (
 	ErrZeroValue         = errors.New("value is a zero value for its type")
 )
 
+var optmeta map[string]map[string]string
+
+// SetOptionMetadata sets metadata for an option.
+//
+// Valid keys for meta are:
+// - short
+// - default
+// - usage
+// - func
+func SetOptionMetadata(name string, meta map[string]string) {
+	optmeta[name] = meta
+}
+
+func mergeMetadata(tag map[string]string) (map[string]string, error) {
+	name, ok := tag["option"]
+	if !ok {
+		return tag, errors.New("option key required in cliutil tag")
+	}
+
+	meta, ok := optmeta[name]
+	if !ok {
+		return tag, nil
+	}
+
+	for k, v := range tag {
+		meta[k] = v
+	}
+
+	return meta, nil
+}
+
 // OptionType is implemented by structs that set and read options.
 type OptionType interface {
 
@@ -35,7 +66,7 @@ type OptionType interface {
 	Read(*viper.Viper, reflect.Value) error
 }
 
-// OptionTypeFunc is ...
+// OptionTypeFunc is a definition for functions that return an OptionType.
 type OptionTypeFunc func(map[string]string) OptionType
 
 var optfn map[string]OptionTypeFunc
@@ -44,6 +75,8 @@ var optfn map[string]OptionTypeFunc
 func RegisterOptionTypeFunc(name string, fn OptionTypeFunc) { optfn[name] = fn }
 
 func init() {
+	optmeta = make(map[string]map[string]string)
+
 	optfn = map[string]OptionTypeFunc{
 		"string":   NewStringOption,
 		"int":      NewIntOption,
@@ -58,6 +91,13 @@ func init() {
 // newOptionType returns an OptionType from the OptionTypeFunc registered to name.
 func newOptionType(tag map[string]string, i interface{}) (OptionType, error) {
 	var fn OptionTypeFunc
+
+	var err error
+	tag, err = mergeMetadata(tag)
+	if err != nil {
+		return nil, err
+	}
+
 	if name, ok := tag["func"]; ok {
 		if fn, ok = optfn[name]; !ok {
 			return nil, ErrFuncNotRegistered
