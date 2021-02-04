@@ -78,13 +78,14 @@ func init() {
 	optmeta = make(map[string]map[string]string)
 
 	optfn = map[string]OptionTypeFunc{
-		"string":   NewStringOption,
-		"int":      NewIntOption,
-		"bool":     NewBoolOption,
-		"float64":  NewFloat64Option,
-		"[]int":    NewIntSliceOption,
-		"ioreader": NewIOReaderOption,
-		"stdin":    NewStdinOption,
+		"string":            NewStringOption,
+		"int":               NewIntOption,
+		"bool":              NewBoolOption,
+		"float64":           NewFloat64Option,
+		"[]int":             NewIntSliceOption,
+		"map[string]string": NewKeyValueOption,
+		"ioreader":          NewIOReaderOption,
+		"stdin":             NewStdinOption,
 	}
 }
 
@@ -114,6 +115,8 @@ func newOptionType(tag map[string]string, i interface{}) (OptionType, error) {
 			fn = optfn["float64"]
 		case []int:
 			fn = optfn["[]int"]
+		case map[string]string:
+			fn = optfn["map[string]string"]
 		default:
 			return nil, ErrTypeNotSupported
 		}
@@ -240,6 +243,27 @@ func (opt *IntSliceOption) Read(cfg *viper.Viper, field reflect.Value) error {
 		field.Set(reflect.Append(field, reflect.ValueOf(val)))
 	}
 	return err
+}
+
+// KeyValueOption implements Option for []int options.
+type KeyValueOption struct {
+	tag map[string]string
+}
+
+// NewKeyValueOption is an OptionTypeFunc that returns an *KeyValueOption.
+func NewKeyValueOption(tag map[string]string) OptionType { return &KeyValueOption{tag} }
+
+// Set implements OptionType.Set.
+func (opt *KeyValueOption) Set(f *Flagger) error {
+	f.String(opt.tag["option"], opt.tag["short"], opt.tag["default"], opt.tag["usage"])
+	return nil
+}
+
+// Read implements OptionType.Read.
+func (opt *KeyValueOption) Read(cfg *viper.Viper, field reflect.Value) error {
+	v := ParseKeyValue(cfg.GetString(opt.tag["option"]))
+	field.Set(reflect.ValueOf(v))
+	return nil
 }
 
 // IOReaderOption implements Option for string options read from an io.Reader.

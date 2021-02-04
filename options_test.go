@@ -17,7 +17,8 @@ type Input struct {
 	InputEmbedded
 	*InputEmbeddedPtr
 
-	ValueFive []int `cliutil:"option=value-five default=1,2,3"`
+	ValueFive []int             `cliutil:"option=value-five default=1,2,3"`
+	ValueSix  map[string]string `cliutil:"option=value-six"`
 }
 
 type InputNested struct {
@@ -56,6 +57,9 @@ func TestReadOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// We cannot parse inner key/value pairs yet.
+	v.SetDefault("value-six", "key1=val1 key2=val2")
+
 	err = cliutil.ReadOptions(input, v)
 	if err != nil {
 		t.Fatal(err)
@@ -83,6 +87,11 @@ func TestReadOptions(t *testing.T) {
 
 	ex5 := []int{1, 2, 3}
 	if diff := deep.Equal(input.ValueFive, ex5); diff != nil {
+		t.Error(diff)
+	}
+
+	ex6 := map[string]string{"key1": "val1", "key2": "val2"}
+	if diff := deep.Equal(input.ValueSix, ex6); diff != nil {
 		t.Error(diff)
 	}
 }
