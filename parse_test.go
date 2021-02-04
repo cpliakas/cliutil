@@ -8,7 +8,7 @@ import (
 )
 
 func TestParseKeyValue(t *testing.T) {
-	s := `time="2017-05-30T19:02:08-05:00" level=info msg="some log message" no_value`
+	s := `time="2017-05-30T19:02:08-05:00" level=info msg="some log message" no_value "key with space"=val`
 	m := cliutil.ParseKeyValue(s)
 
 	tests := []struct {
@@ -19,6 +19,7 @@ func TestParseKeyValue(t *testing.T) {
 		{"level", "info"},
 		{"msg", "some log message"},
 		{"no_value", ""},
+		{"key with space", "val"},
 	}
 
 	for _, tt := range tests {
