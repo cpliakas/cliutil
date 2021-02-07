@@ -2,6 +2,7 @@
 
 
 [![Build Status](https://travis-ci.org/cpliakas/cliutil.svg?branch=main)](https://travis-ci.org/cpliakas/cliutil)
+[![Tests Actions Status](https://github.com/cpliakas/cliutil/workflows/Tests/badge.svg)](https://github.com/cpliakas/cliutil/actions?query=workflow%3ATests)
 [![Go Reference](https://pkg.go.dev/badge/github.com/cpliakas/cliutil.svg)](https://pkg.go.dev/github.com/cpliakas/cliutil)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cpliakas/cliutil)](https://goreportcard.com/report/github.com/cpliakas/cliutil)
 
