@@ -309,6 +309,8 @@ func getReadCloser(u *url.URL) (io.ReadCloser, error) {
 	switch u.Scheme {
 	case "file", "":
 		return os.Open(u.Path)
+	case "c":
+		return os.Open(u.String())
 	case "http", "https":
 		resp, err := http.Get(u.String())
 		return resp.Body, err

@@ -24,7 +24,7 @@ func NewEventListener() *EventListener {
 // Run runs the event listener in a goroutine and sends e message to
 // EventListener.shutdown if a SIGINT or SIGTERM signal is detected.
 func (e *EventListener) Run() *EventListener {
-	signal.Notify(e.signal, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(e.signal, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
 		for {
