@@ -84,6 +84,7 @@ func init() {
 		"float64":           NewFloat64Option,
 		"[]int":             NewIntSliceOption,
 		"map[string]string": NewKeyValueOption,
+		"boolstring":        NewBoolStringOption,
 		"ioreader":          NewIOReaderOption,
 		"stdin":             NewStdinOption,
 	}
@@ -243,6 +244,33 @@ func (opt *IntSliceOption) Read(cfg *viper.Viper, field reflect.Value) error {
 		field.Set(reflect.Append(field, reflect.ValueOf(val)))
 	}
 	return err
+}
+
+// BoolStringOption implements Option for string options.
+type BoolStringOption struct {
+	tag map[string]string
+}
+
+// NewBoolStringOption is an OptionTypeFunc that returns a *BoolStringOption.
+func NewBoolStringOption(tag map[string]string) OptionType { return &BoolStringOption{tag} }
+
+// Set implements OptionType.Set.
+func (opt *BoolStringOption) Set(f *Flagger) (err error) {
+	f.String(opt.tag["option"], opt.tag["short"], opt.tag["default"], opt.tag["usage"])
+	return nil
+}
+
+// Read implements OptionType.Read.
+func (opt *BoolStringOption) Read(cfg *viper.Viper, field reflect.Value) (err error) {
+	s := cfg.GetString(opt.tag["option"])
+
+	var v bool
+	if v, err = strconv.ParseBool(s); err != nil {
+		return
+	}
+
+	field.SetBool(v)
+	return
 }
 
 // KeyValueOption implements Option for []int options.

@@ -110,12 +110,13 @@ $> ./myapp print --text hello
 hello
 ```
 
-The `func` key allows for post-processing options. For example, setting `func=ioreader` and passing `/path/to/file` as the corresponding option will read the contents of the file into the field. Setting `func=stdin` will read `STDIN` into the field if the option isn't explicitly set.
+The `func` key allows for post-processing options. For example, setting `func=ioreader` and passing `/path/to/file` as the corresponding option will read the contents of the file into the field. Setting `func=stdin` will read `STDIN` into the field if the option isn't explicitly set. Setting `func=boolstring` will accept a string option and convert it to a boolean.
 
 ```go
 type Input struct {
-	File string `cliutil:"option=file func=ioreader" usage='read data from file/url' `
-	Data string `cliutil:"option=data func=stdin"    usage='read data from STDIN'`
+	File string `cliutil:"option=file func=ioreader"   usage='read data from file/url' `
+	Data string `cliutil:"option=data func=stdin"      usage='read data from STDIN'`
+	Bool bool   `cliutil:"option=bool func=boolstring" usage='convert the string too a boolean'`
 }
 ```
 
